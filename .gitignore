@@ -1,0 +1,5 @@
+*.dist-info
+*.pyc
+temp/
+.DS_Store
+!lib/README.md
