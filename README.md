@@ -1,10 +1,8 @@
 # GilaCool Bot for Messenger
-This project is a guide for developers on using [Google Cloud Platform](http://cloud.google.com) to build a bot service for [Facebook Messenger Platform](https://developers.facebook.com/docs/messenger-platform).
+This is a starter kit for building a bot service for [Facebook Messenger Platform](https://developers.facebook.com/docs/messenger-platform).
 
-Infrastructure stack:
+We're using [Google Cloud Platform](http://cloud.google.com) as our infrastructure.
 
-- Google App Engine
-
-Application stack:
-
+- Google Cloud SDK
+- Google App Engine Python SDK
 - Flask-RESTful
