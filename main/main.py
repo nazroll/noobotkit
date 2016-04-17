@@ -4,15 +4,19 @@ import logging
 from google.appengine.api import urlfetch
 import json
 
+
 app = Flask(__name__)
 api = Api(app)
 
+
 FB_PAGE_ACCESS_TOKEN = ""
+
 
 parser = reqparse.RequestParser()
 parser.add_argument('hub.mode')
 parser.add_argument('hub.challenge')
 parser.add_argument('hub.verify_token')
+
 
 def fb_send_text_message(sender, text):
     fb_sender_id = sender['id']
@@ -44,6 +48,7 @@ def fb_send_text_message(sender, text):
 
 class FbMessengerBotHandler(Resource):
     def get(self):
+        args = parser.parse_args()
         if args['hub.verify_token']:
             return int(args['hub.challenge'])
         return 'ok'
