@@ -1,5 +1,5 @@
 # Noob Bot Kit
-This is a starter code project for developers to get started building bot services. 
+This is a starter code project to get started building a bot service for messaging platforms. 
 
 We're using [Google Cloud Platform](http://cloud.google.com) as our infrastructure.
 
