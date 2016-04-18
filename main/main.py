@@ -60,8 +60,9 @@ class FbMessengerBotHandler(Resource):
             fb_messaging = json['entry'][0]['messaging']
             for fb_message in fb_messaging:
                 sender = fb_message['sender']
-                text = fb_message['message']['text']
-                fb_send_text_message(sender, text)
+                if 'text' in fb_message['message']:
+                    text = fb_message['message']['text']
+                    fb_send_text_message(sender, text)
 
 api.add_resource(FbMessengerBotHandler, '/fbmessenger')
 
