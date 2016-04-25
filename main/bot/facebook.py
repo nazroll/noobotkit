@@ -104,68 +104,6 @@ def set_welcome_message(fb_page_id):
         logging.debug(req.content)
 
 
-class SetWelcomeMessage(Resource):
-    def get(self):
-        set_welcome_message(fb_page_id)
-
-
-class MainHandler(Resource):
-    def get(self):
-        args = parser.parse_args()
-        logging.debug(args)
-
-        if args['hub.mode'] == 'subscribe':
-            if args['hub.verify_token'] == config.FACEBOOK_WEBHOOK_VERIFY_TOKEN:
-                return int(args['hub.challenge'])
-        result = {}
-        return util.jsonpify(result)
-
-    def post(self):
-        obj = request.get_json()
-        if obj:
-            for entry in obj['entry']:
-                fb_messaging = entry['messaging']
-                fb_page_id = entry['id']
-                for fb_obj in fb_messaging:
-                    fb_sender = fb_obj['sender']
-                    fb_recipient = fb_obj['recipient']
-
-                    if 'message' in fb_obj:
-                        fb_content = fb_obj['message']
-                        if'attachments' in fb_content:
-                            for attachment in fb_content['attachments']:
-                                logging.debug('%s %s %s %s "%s"' % (fb_page_id, fb_sender['id'], fb_recipient['id'], attachment['type'], attachment['payload']))
-                        else:
-                            logging.debug('%s %s %s %s "%s"' % (fb_page_id, fb_sender['id'], fb_recipient['id'], 'text', fb_content))
-                    if 'delivery' in fb_obj:
-                        fb_delivery = fb_obj['delivery']
-                        logging.debug('%s %s %s "%s"' % (fb_page_id, fb_sender['id'], fb_recipient['id'], fb_delivery))
-
-                    # fb_msg_time = fb_message['time']
-                    # fb_msg_type = 'text'
-                    # fb_msg = ''
-                    # fb_msg_text = ''
-                    # fb_payload_url = ''
-                    #
-                    # if 'text' in fb_message['message']:
-                    #     fb_msg_text = fb_message['message']['text']
-                    #
-                    # if 'attachments' in fb_message['message']:
-                    #     for attachment in fb_message['message']['attachments']:
-                    #         fb_msg_type = attachment['type']
-                    #         fb_payload = attachment['payload']
-                    #         fb_payload_url = fb_payload['url']
-                    # fb_msg = fb_payload_url if fb_payload_url else fb_msg_text
-                    #
-                    # logging.debug('%s %s %s %s %s "%s"' % (fb_page_id, fb_msg_time, fb_sender['id'], fb_recipient['id'], fb_msg_type, fb_msg))
-                    # if fb_msg_type is 'text':
-                    #     send_text_message(fb_sender, fb_msg_text)
-                    # else:
-                    #     send_attachment_message(fb_sender, fb_msg_type, fb_payload)
-        result = {}
-        return util.jsonpify(result)
-
-
 def send_attachment_message(sender, attachment_type, payload):
     fb_sender_id = sender['id']
     content = {
@@ -195,28 +133,206 @@ def send_attachment_message(sender, attachment_type, payload):
         logging.debug(req.content)
 
 
-def send_text_message(sender, text):
-    fb_sender_id = sender['id']
-    fb_sender_text = text
+def send_fb_message(payload):
+    if config.PRODUCTION:
+        try:
+            req = urlfetch.fetch(
+                'https://graph.facebook.com/v2.6/me/messages?access_token=' + config.FACEBOOK_PAGE_ACCESS_TOKEN,
+                payload,
+                urlfetch.POST,
+                {'Content-Type': 'application/json'}
+            )
+            logging.debug(req.content)
+        except urlfetch.Error as e:
+            logging.error(e.message)
+
+
+def example_message_text(sender, text):
     content = {
         'recipient': {
-            'id': fb_sender_id
+            'id': sender['id']
         },
         'message': {
-            'text': fb_sender_text
+            'text': text
         }
     }
-    headers = {
-        'Content-Type': 'application/json'
-    }
+
+    logging.debug('"%s" "%s" "%s"' % (
+        'outgoing',
+        sender['id'],
+        content,
+    ))
+
     payload = json.dumps(content)
-    logging.debug(payload)
-    url = 'https://graph.facebook.com/v2.6/me/messages?access_token=' + config.FACEBOOK_PAGE_ACCESS_TOKEN
-    if config.PRODUCTION:
-        req = urlfetch.fetch(
-            url,
-            payload,
-            urlfetch.POST,
-            headers
-        )
-        logging.debug(req.content)
+    send_fb_message(payload)
+
+
+def example_message_image(sender, url):
+    content = {
+        'recipient': {
+            'id': sender['id']
+        },
+        'message': {
+            'attachment': {
+                'type': 'image',
+                'payload': {
+                    'url': url
+                }
+            }
+        }
+    }
+
+    logging.debug('"%s" "%s" "%s"' % (
+        'outgoing',
+        sender['id'],
+        content,
+    ))
+
+    payload = json.dumps(content)
+    send_fb_message(payload)
+
+
+class MainHandler(Resource):
+    def get(self):
+        args = parser.parse_args()
+        logging.debug(args)
+
+        if args['hub.mode'] == 'subscribe':
+            if args['hub.verify_token'] == config.FACEBOOK_WEBHOOK_VERIFY_TOKEN:
+                return int(args['hub.challenge'])
+        result = {}
+        return util.jsonpify(result)
+
+    def post(self):
+        obj = request.get_json()
+        if obj:
+            for entry in obj['entry']:
+                fb_messaging = entry['messaging']
+                fb_page_id = entry['id']
+                for fb_obj in fb_messaging:
+                    fb_sender = fb_obj['sender']
+                    fb_recipient = fb_obj['recipient']
+
+                    if 'message' in fb_obj:
+                        fb_content = fb_obj['message']
+                        fb_timestamp = fb_obj['timestamp']
+                        fb_mid = fb_content['mid']
+                        fb_seq = fb_content['seq']
+                        if'attachments' in fb_content:
+                            for attachment in fb_content['attachments']:
+                                atype = attachment['type']
+                                if atype is 'image' or atype is 'video' or atype is 'audio':
+                                    logging.debug(
+                                        '"%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s"' % (
+                                            'incoming',
+                                            fb_timestamp,
+                                            fb_page_id,
+                                            fb_sender['id'],
+                                            fb_recipient['id'],
+                                            attachment['type'],
+                                            attachment['payload']['url'],
+                                            fb_seq,
+                                            fb_mid
+                                        )
+                                    )
+                                elif atype is 'location':
+                                    logging.debug(
+                                        '"%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s"' % (
+                                            'incoming',
+                                            fb_timestamp,
+                                            fb_page_id,
+                                            fb_sender['id'],
+                                            fb_recipient['id'],
+                                            attachment['type'],
+                                            attachment['payload'],
+                                            fb_seq,
+                                            fb_mid
+                                        )
+                                    )
+                                else:
+                                    logging.debug(
+                                        '"%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s"' % (
+                                            'incoming',
+                                            fb_timestamp,
+                                            fb_page_id,
+                                            fb_sender['id'],
+                                            fb_recipient['id'],
+                                            attachment['type'],
+                                            attachment['payload'],
+                                            fb_seq,
+                                            fb_mid
+                                        )
+                                    )
+                        else:
+                            logging.debug(
+                                '"%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s"' % (
+                                    'incoming',
+                                    fb_timestamp,
+                                    fb_page_id,
+                                    fb_sender['id'],
+                                    fb_recipient['id'],
+                                    'text',
+                                    fb_content['text'],
+                                    fb_seq,
+                                    fb_mid
+                                )
+                            )
+                            if 'show example text' in fb_content['text']:
+                                example_message_text(
+                                    fb_sender,
+                                    'This is an example of a message with text only.'
+                                )
+                                example_message_text(
+                                    fb_sender,
+                                    'The last thing you said was: "%s"' % fb_content['text']
+                                )
+                            if 'show example image' in fb_content['text']:
+                                example_message_text(
+                                    fb_sender,
+                                    'This is an example of a message with an image only.'
+                                )
+                                example_message_image(
+                                    fb_sender,
+                                    'http://petersapparel.parseapp.com/img/item100-thumb.png'
+                                )
+
+                    elif 'delivery' in fb_obj:
+                        fb_delivery = fb_obj['delivery']
+                        fb_watermark = fb_delivery['watermark']
+                        fb_seq = fb_delivery['seq']
+                        if 'mids' in fb_delivery and len(fb_delivery['mids']) > 0:
+                            for fb_mid in fb_delivery['mids']:
+                                logging.debug(
+                                    '"%s" "%s" "%s" "%s" "%s" "%s" "%s"' % (
+                                        'delivery',
+                                        fb_page_id,
+                                        fb_sender['id'],
+                                        fb_recipient['id'],
+                                        fb_watermark,
+                                        fb_seq,
+                                        fb_mid
+                                    )
+                                )
+                        else:
+                            logging.debug(
+                                '"%s" "%s" "%s" "%s" "%s" "%s"' % (
+                                    'delivery',
+                                    fb_page_id,
+                                    fb_sender['id'],
+                                    fb_recipient['id'],
+                                    fb_watermark,
+                                    fb_seq
+                                )
+                            )
+                    else:
+                        logging.debug(
+                            '"%s" "%s" "%s" "%s" "%s"' % (
+                                'incoming',
+                                fb_page_id,
+                                fb_sender['id'],
+                                fb_recipient['id'],
+                                fb_obj,
+                            )
+                        )
+        result = {}
+        return util.jsonpify(result)
