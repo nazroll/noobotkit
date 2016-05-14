@@ -8,11 +8,6 @@ from google.appengine.api import urlfetch
 from flask import request
 from flask_restful import Resource, reqparse
 
-parser = reqparse.RequestParser()
-parser.add_argument('hub.mode')
-parser.add_argument('hub.challenge')
-parser.add_argument('hub.verify_token')
-
 payload_image = {
     'url': ''
 }
@@ -194,6 +189,11 @@ def example_message_image(sender, url):
 
 class MainHandler(Resource):
     def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('hub.mode')
+        parser.add_argument('hub.challenge')
+        parser.add_argument('hub.verify_token')
+
         args = parser.parse_args()
         logging.debug(args)
 

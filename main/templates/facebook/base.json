@@ -1,0 +1,11 @@
+{
+  "recipient": {
+    "phone_number": "",
+    "id": ""
+  },
+  "message": {
+    "text": "",
+    "attachment": ""
+  },
+  "notification_type": ""
+}
