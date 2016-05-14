@@ -1,11 +1,10 @@
-# Noob Bot Kit
-This is a starter code project to get started building a bot service for messaging platforms. 
+# Noobot Kit
+This project contains code samples that can help you get started building bot services for Internet messaging platforms. 
 
-We're using [Google Cloud Platform](http://cloud.google.com) as our infrastructure.
-
-- Google Cloud SDK
-- Google App Engine Python SDK
-- Flask-RESTful
+This kit assumes that you are using:
+ 
+- [Google App Engine](https://cloud.google.com/appengine/) as the Platform-as-a-Service (PaaS) platform.
+- [Python](https://www.python.org) as the main programming language.
 
 ## Supported Platforms
-- [Facebook Messenger Platform](https://developers.facebook.com/docs/messenger-platform)
+- [Facebook Messenger](https://developers.facebook.com/docs/messenger-platform)
